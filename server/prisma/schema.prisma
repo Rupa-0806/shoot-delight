@@ -1,0 +1,98 @@
+// Prisma schema for Shoot Delight
+// Run `npx prisma migrate dev` after setting DATABASE_URL in .env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+// Tracks the manual advance-payment flow: customer pays via UPI and uploads a
+// screenshot, which is emailed to the business for manual verification.
+// The screenshot itself is never written to disk or the database.
+enum AdvancePaymentStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+}
+
+enum AdminRole {
+  ADMIN
+  SUPERADMIN
+}
+
+model Admin {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      AdminRole @default(ADMIN)
+  createdAt DateTime  @default(now())
+}
+
+model Customer {
+  id        String    @id @default(uuid())
+  name      String
+  phone     String
+  email     String
+  instagram String?
+  createdAt DateTime  @default(now())
+  bookings  Booking[]
+}
+
+model Service {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  price       Float?
+  duration    String
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
+}
+
+
+// A single bookable time slot on a given calendar date
+model Slot {
+  id        String   @id @default(uuid())
+  date      DateTime // calendar date (time portion ignored)
+  time      String   // e.g. "10:00 AM"
+  isBlocked Boolean  @default(false) // holiday / manually blocked
+  bookingId String?  @unique
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([date, time])
+}
+
+model Booking {
+  id                 String        @id @default(uuid())
+  customer           Customer      @relation(fields: [customerId], references: [id])
+  customerId         String
+  service             Service       @relation(fields: [serviceId], references: [id])
+  serviceId          String
+  bookingDate        DateTime
+  
+  location           String
+  eventType          String
+  
+  specialRequirements String?
+  referenceReelLink   String?
+  status             BookingStatus @default(PENDING)
+  notes              String?
+  slot               Slot?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}

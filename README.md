@@ -216,3 +216,5 @@ page) — let me know if you want that instead of the manual flow.
 - PDF export of bookings and Instagram embeds are marked "optional" in the spec and were
   left as a fast follow — the `Booking` model and admin detail modal already have everything
   needed to add a PDF export button (e.g. with a small `pdfkit` route) without schema changes.
+#   s h o o t - d e l i g h t  
+ 

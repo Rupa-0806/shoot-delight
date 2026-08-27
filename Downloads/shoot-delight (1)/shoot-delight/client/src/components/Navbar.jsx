@@ -30,7 +30,7 @@ export default function Navbar() {
     >
       <nav className="flex items-center justify-between px-6 md:px-12 py-4">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/brand/logo-nav.png" alt="Shoot Delight" className="h-10 md:h-12 w-auto" />
+          <img src="/brand/logo-nav.png" alt="Shoot Delight" className="brand-logo h-10 md:h-12 w-auto" />
         </Link>
 
         <div className="hidden md:flex items-center gap-8">

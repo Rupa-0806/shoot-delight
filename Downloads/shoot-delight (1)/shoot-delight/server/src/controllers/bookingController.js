@@ -10,11 +10,13 @@ const {
 // ======================================================
 // CREATE BOOKING
 // POST /api/bookings
-// Public
+// PUBLIC
 // ======================================================
+
 const createBooking = asyncHandler(async (req, res) => {
+  console.log("BOOKING REQUEST BODY:", req.body);
+
   const {
-    serviceId,
     bookingDate,
     location,
     fullName,
@@ -22,50 +24,151 @@ const createBooking = asyncHandler(async (req, res) => {
     email,
     instagram,
     eventType,
-    
     specialRequirements,
     referenceReelLink,
+    eventAddress,
+    agreeToTerms,
   } = req.body;
+
+  // ====================================================
+  // VALIDATION
+  // ====================================================
+
+  const errors = [];
+
+  if (!bookingDate) {
+    errors.push({
+      field: "bookingDate",
+      message: "Booking date is required",
+    });
+  }
+
+  if (!location || !location.trim()) {
+    errors.push({
+      field: "location",
+      message: "Location is required",
+    });
+  }
+
+  if (!fullName || !fullName.trim()) {
+    errors.push({
+      field: "fullName",
+      message: "Full name is required",
+    });
+  }
+
+  if (!phone || !phone.trim()) {
+    errors.push({
+      field: "phone",
+      message: "Phone number is required",
+    });
+  }
+
+  if (!email || !email.trim()) {
+    errors.push({
+      field: "email",
+      message: "Email is required",
+    });
+  }
+
+  if (!eventType || !eventType.trim()) {
+    errors.push({
+      field: "eventType",
+      message: "Event type is required",
+    });
+  }
+
+  if (!eventAddress || !eventAddress.trim()) {
+    errors.push({
+      field: "eventAddress",
+      message: "Event address is required",
+    });
+  }
+
+  // Checkbox must be exactly true
+  if (agreeToTerms !== true) {
+    errors.push({
+      field: "agreeToTerms",
+      message: "You must accept the terms",
+    });
+  }
+
+  if (errors.length > 0) {
+    console.log("BOOKING VALIDATION ERRORS:", errors);
+
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      errors,
+    });
+  }
+
+  // ====================================================
+  // DATE
+  // ====================================================
 
   const dateOnly = toDateOnly(bookingDate);
 
-  /*
-   * Customer selects a preferred date.
-   * Exact shooting time will be confirmed later
-   * by Shoot Delight over phone.
-   */
+  console.log("BOOKING DATE:", dateOnly);
+
+  // ====================================================
+  // CREATE CUSTOMER + BOOKING
+  // ====================================================
 
   const booking = await prisma.$transaction(async (tx) => {
-    // Create customer
+    // --------------------------------------------------
+    // CREATE CUSTOMER
+    // --------------------------------------------------
+
     const customer = await tx.customer.create({
       data: {
-        name: fullName,
-        phone,
-        email,
-        instagram,
+        name: fullName.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        instagram: instagram?.trim() || null,
       },
     });
 
-    // Create booking
-    const created = await tx.booking.create({
+    console.log("CUSTOMER CREATED:", customer.id);
+
+    // --------------------------------------------------
+    // CREATE BOOKING
+    // --------------------------------------------------
+
+    const createdBooking = await tx.booking.create({
       data: {
-        customerId: customer.id,
-        serviceId,
-        bookingDate: dateOnly,
-        location,
-        eventType,
-        
-        specialRequirements,
-        referenceReelLink,
+        bookingDate: new Date(bookingDate),
+
+        location: location.trim(),
+
+        eventAddress: eventAddress.trim(),
+
+        eventType: eventType.trim(),
+
+        specialRequirements:
+          specialRequirements?.trim() || null,
+
+        referenceReelLink:
+          referenceReelLink?.trim() || null,
+
+        // Connect the newly created customer
+        customer: {
+          connect: {
+            id: customer.id,
+          },
+        },
       },
 
       include: {
         customer: true,
-        service: true,
+        slot: true,
       },
     });
 
-    return created;
+    console.log("BOOKING CREATED:", createdBooking.id);
+
+    // IMPORTANT: return booking from transaction
+    return createdBooking;
   });
 
   // ====================================================
@@ -73,32 +176,41 @@ const createBooking = asyncHandler(async (req, res) => {
   // ====================================================
 
   try {
-    // Customer confirmation email
+    // --------------------------------------------------
+    // CUSTOMER CONFIRMATION
+    // --------------------------------------------------
+
     await sendEmail({
       to: booking.customer.email,
       subject: "Your Shoot Delight booking request has been received",
       html: customerConfirmationTemplate(booking),
     });
 
-    // Admin/business notification email
-    await sendEmail({
-      to: process.env.BUSINESS_EMAIL,
-      subject: `New Booking: ${booking.service.title} on ${new Date(
-        booking.bookingDate
-      ).toDateString()}`,
-      html: adminNotificationTemplate(booking),
-    });
+    // --------------------------------------------------
+    // ADMIN NOTIFICATION
+    // --------------------------------------------------
+
+    if (process.env.BUSINESS_EMAIL) {
+      await sendEmail({
+        to: process.env.BUSINESS_EMAIL,
+        subject: `New Booking: ${booking.eventType} on ${new Date(
+          booking.bookingDate
+        ).toDateString()}`,
+        html: adminNotificationTemplate(booking),
+      });
+    }
   } catch (emailErr) {
-    /*
-     * Booking is already saved.
-     * If email fails, booking should NOT fail.
-     */
+    // Email failure should NOT cancel the booking
     console.error("Email send failed:", emailErr.message);
   }
 
-  // Send success response
+  // ====================================================
+  // SUCCESS
+  // ====================================================
+
   res.status(201).json({
     success: true,
+    message: "Booking created successfully",
     data: booking,
   });
 });
@@ -106,8 +218,9 @@ const createBooking = asyncHandler(async (req, res) => {
 // ======================================================
 // GET ALL BOOKINGS
 // GET /api/bookings
-// Admin only
+// ADMIN
 // ======================================================
+
 const getBookings = asyncHandler(async (req, res) => {
   const {
     status,
@@ -119,13 +232,20 @@ const getBookings = asyncHandler(async (req, res) => {
   } = req.query;
 
   const where = {
-    ...(status && { status }),
+    ...(status && {
+      status,
+    }),
 
     ...(from || to
       ? {
           bookingDate: {
-            ...(from && { gte: new Date(from) }),
-            ...(to && { lte: new Date(to) }),
+            ...(from && {
+              gte: new Date(from),
+            }),
+
+            ...(to && {
+              lte: new Date(to),
+            }),
           },
         }
       : {}),
@@ -140,6 +260,7 @@ const getBookings = asyncHandler(async (req, res) => {
             },
           },
         },
+
         {
           customer: {
             phone: {
@@ -148,6 +269,7 @@ const getBookings = asyncHandler(async (req, res) => {
             },
           },
         },
+
         {
           customer: {
             email: {
@@ -156,8 +278,16 @@ const getBookings = asyncHandler(async (req, res) => {
             },
           },
         },
+
         {
           eventType: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+
+        {
+          location: {
             contains: search,
             mode: "insensitive",
           },
@@ -172,7 +302,7 @@ const getBookings = asyncHandler(async (req, res) => {
 
       include: {
         customer: true,
-        service: true,
+        slot: true,
       },
 
       orderBy: {
@@ -180,6 +310,7 @@ const getBookings = asyncHandler(async (req, res) => {
       },
 
       skip: (Number(page) - 1) * Number(limit),
+
       take: Number(limit),
     }),
 
@@ -190,7 +321,9 @@ const getBookings = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
+
     data: bookings,
+
     meta: {
       total,
       page: Number(page),
@@ -202,8 +335,9 @@ const getBookings = asyncHandler(async (req, res) => {
 // ======================================================
 // GET SINGLE BOOKING
 // GET /api/bookings/:id
-// Admin only
+// ADMIN
 // ======================================================
+
 const getBookingById = asyncHandler(async (req, res) => {
   const booking = await prisma.booking.findUnique({
     where: {
@@ -212,7 +346,6 @@ const getBookingById = asyncHandler(async (req, res) => {
 
     include: {
       customer: true,
-      service: true,
       slot: true,
     },
   });
@@ -233,13 +366,13 @@ const getBookingById = asyncHandler(async (req, res) => {
 // ======================================================
 // UPDATE BOOKING
 // PUT /api/bookings/:id
-// Admin only
+// ADMIN
 // ======================================================
+
 const updateBooking = asyncHandler(async (req, res) => {
   const {
     status,
     notes,
-    bookingTime,
   } = req.body;
 
   const booking = await prisma.booking.update({
@@ -255,16 +388,11 @@ const updateBooking = asyncHandler(async (req, res) => {
       ...(notes !== undefined && {
         notes,
       }),
-
-      // Admin can add confirmed shooting time later
-      ...(bookingTime !== undefined && {
-        bookingTime: bookingTime || null,
-      }),
     },
 
     include: {
       customer: true,
-      service: true,
+      slot: true,
     },
   });
 
@@ -277,14 +405,11 @@ const updateBooking = asyncHandler(async (req, res) => {
 // ======================================================
 // DELETE BOOKING
 // DELETE /api/bookings/:id
-// Admin only
+// ADMIN
 // ======================================================
-const deleteBooking = asyncHandler(async (req, res) => {
-  /*
-   * If an old/legacy slot is attached to this booking,
-   * release the slot before deleting the booking.
-   */
 
+const deleteBooking = asyncHandler(async (req, res) => {
+  // First remove booking reference from slot
   await prisma.slot.updateMany({
     where: {
       bookingId: req.params.id,
@@ -295,6 +420,7 @@ const deleteBooking = asyncHandler(async (req, res) => {
     },
   });
 
+  // Then delete booking
   await prisma.booking.delete({
     where: {
       id: req.params.id,

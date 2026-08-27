@@ -32,7 +32,7 @@ export default function AdminLayout() {
       <Toaster position="top-center" toastOptions={{ style: { background: "#111", color: "#faf9f6" } }} />
 
       <aside className="w-64 glass shrink-0 hidden md:flex flex-col p-6">
-        <img src="/brand/logo-nav.png" alt="Shoot Delight" className="h-10 mb-8" />
+        <img src="/brand/logo-nav.png" alt="Shoot Delight" className="brand-logo h-10 mb-8" />
         <nav className="flex-1 space-y-1">
           {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -61,7 +61,7 @@ export default function AdminLayout() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="md:hidden glass p-4 flex justify-between items-center">
-          <img src="/brand/logo-nav.png" alt="Shoot Delight Admin" className="h-8" />
+          <img src="/brand/logo-nav.png" alt="Shoot Delight Admin" className="brand-logo h-8" />
           <button onClick={handleLogout} className="text-sm text-cream/70">Logout</button>
         </header>
         <main className="flex-1 p-6 md:p-10 overflow-x-hidden">

@@ -8,7 +8,7 @@ export default function Footer() {
     <footer className="border-t border-cream/10 mt-24">
       <div className="section grid grid-cols-1 md:grid-cols-4 gap-10">
         <div>
-          <img src="/brand/logo-nav.png" alt="Shoot Delight" className="h-10 mb-3" />
+          <img src="/brand/logo-nav.png" alt="Shoot Delight" className="brand-logo h-10 mb-3" />
           <p className="text-sm text-cream/60">
             Turning everyday moments into stunning Instagram reels, one shoot at a time.
           </p>

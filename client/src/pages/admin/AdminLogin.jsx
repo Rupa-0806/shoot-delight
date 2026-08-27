@@ -25,7 +25,7 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-ink px-6">
       <div className="glass rounded-2xl p-10 w-full max-w-md">
-        <img src="/brand/logo-square.png" alt="Shoot Delight" className="h-20 mx-auto mb-2" />
+        <img src="/brand/logo-square.png" alt="Shoot Delight" className="brand-logo h-20 mx-auto mb-2" />
         <p className="text-center text-cream/60 text-sm mb-8">Admin Login</p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

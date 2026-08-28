@@ -85,12 +85,7 @@ const createBooking = asyncHandler(async (req, res) => {
     });
   }
 
-  // IMPORTANT:
-  // Do NOT check serviceId.
-  //
-  // Checkbox sends true when checked.
-  // So only reject if it is not exactly true.
-
+  // Checkbox must be exactly true
   if (agreeToTerms !== true) {
     errors.push({
       field: "agreeToTerms",
@@ -114,12 +109,17 @@ const createBooking = asyncHandler(async (req, res) => {
 
   const dateOnly = toDateOnly(bookingDate);
 
+  console.log("BOOKING DATE:", dateOnly);
+
   // ====================================================
   // CREATE CUSTOMER + BOOKING
   // ====================================================
 
   const booking = await prisma.$transaction(async (tx) => {
-    // Create customer
+    // --------------------------------------------------
+    // CREATE CUSTOMER
+    // --------------------------------------------------
+
     const customer = await tx.customer.create({
       data: {
         name: fullName.trim(),
@@ -129,14 +129,19 @@ const createBooking = asyncHandler(async (req, res) => {
       },
     });
 
-    // Create booking
+    console.log("CUSTOMER CREATED:", customer.id);
+
+    // --------------------------------------------------
+    // CREATE BOOKING
+    // --------------------------------------------------
+
     const createdBooking = await tx.booking.create({
       data: {
-        customerId: customer.id,
-
-        bookingDate: dateOnly,
+        bookingDate: new Date(bookingDate),
 
         location: location.trim(),
+
+        eventAddress: eventAddress.trim(),
 
         eventType: eventType.trim(),
 
@@ -145,6 +150,13 @@ const createBooking = asyncHandler(async (req, res) => {
 
         referenceReelLink:
           referenceReelLink?.trim() || null,
+
+        // Connect the newly created customer
+        customer: {
+          connect: {
+            id: customer.id,
+          },
+        },
       },
 
       include: {
@@ -153,6 +165,9 @@ const createBooking = asyncHandler(async (req, res) => {
       },
     });
 
+    console.log("BOOKING CREATED:", createdBooking.id);
+
+    // IMPORTANT: return booking from transaction
     return createdBooking;
   });
 
@@ -161,14 +176,20 @@ const createBooking = asyncHandler(async (req, res) => {
   // ====================================================
 
   try {
-    // Customer confirmation
+    // --------------------------------------------------
+    // CUSTOMER CONFIRMATION
+    // --------------------------------------------------
+
     await sendEmail({
       to: booking.customer.email,
       subject: "Your Shoot Delight booking request has been received",
       html: customerConfirmationTemplate(booking),
     });
 
-    // Admin notification
+    // --------------------------------------------------
+    // ADMIN NOTIFICATION
+    // --------------------------------------------------
+
     if (process.env.BUSINESS_EMAIL) {
       await sendEmail({
         to: process.env.BUSINESS_EMAIL,
@@ -179,6 +200,7 @@ const createBooking = asyncHandler(async (req, res) => {
       });
     }
   } catch (emailErr) {
+    // Email failure should NOT cancel the booking
     console.error("Email send failed:", emailErr.message);
   }
 
@@ -387,6 +409,7 @@ const updateBooking = asyncHandler(async (req, res) => {
 // ======================================================
 
 const deleteBooking = asyncHandler(async (req, res) => {
+  // First remove booking reference from slot
   await prisma.slot.updateMany({
     where: {
       bookingId: req.params.id,
@@ -397,6 +420,7 @@ const deleteBooking = asyncHandler(async (req, res) => {
     },
   });
 
+  // Then delete booking
   await prisma.booking.delete({
     where: {
       id: req.params.id,

@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ink text-cream antialiased;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #f7f8fa 0%, #c9ccd1 42%, #ffd400 72%, #fff0a3 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  background: #ffd400;
+  color: #050505;
+  font-weight: 600;
+  transition: transform 200ms, box-shadow 200ms;
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(255, 212, 0, 0.3);
+}
+
+.btn-outline {
+  @apply inline-flex items-center gap-2 px-6 py-3 rounded-full border border-cream/30 text-cream font-semibold transition-colors duration-200 hover:bg-cream/10;
+}
+
+.section {
+  @apply px-6 md:px-12 lg:px-24 py-16 md:py-24;
+}
+
+.skeleton {
+  @apply animate-pulse bg-white/10 rounded-lg;
+}
+
+.brand-logo {
+  filter: none !important;
+}
+
+/* ==========================================================================
+   Booking Page — Luxury Black + Gold theme
+   Scoped to the .booking-luxury wrapper so no other page is affected.
+   ========================================================================== */
+
+.booking-luxury {
+  position: relative;
+  background: #050505;
+}
+
+.booking-luxury__glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255, 212, 0, 0.14), transparent 70%),
+    radial-gradient(ellipse 50% 30% at 100% 100%, rgba(255, 212, 0, 0.06), transparent 70%);
+  z-index: 0;
+}
+
+.booking-luxury__card {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, #111111 0%, #0a0a0a 100%);
+  border: 1px solid rgba(255, 212, 0, 0.18);
+  box-shadow:
+    0 0 60px -20px rgba(255, 212, 0, 0.25),
+    0 20px 60px -20px rgba(0, 0, 0, 0.8);
+}
+
+.label-gold {
+  @apply block text-xs font-semibold uppercase tracking-[0.15em] mb-2;
+  color: #d8b400;
+}
+
+.input-gold {
+  @apply w-full bg-black/60 border rounded-lg px-4 py-3 text-white placeholder:text-white/30 transition-all duration-200 outline-none;
+  border-color: rgba(255, 212, 0, 0.25);
+  color-scheme: dark;
+}
+
+.input-gold:focus {
+  border-color: #ffd400;
+  box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.12), 0 0 20px -4px rgba(255, 212, 0, 0.35);
+}
+
+.input-gold:hover:not(:focus) {
+  border-color: rgba(255, 212, 0, 0.4);
+}
+
+/* Style the native date-picker icon gold on dark background */
+.input-gold[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(70%) sepia(45%) saturate(500%) hue-rotate(0deg) brightness(95%);
+  cursor: pointer;
+}
+
+.divider-gold {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 212, 0, 0.35), transparent);
+}
+
+.btn-gold {
+  @apply inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-bold tracking-wide transition-all duration-200;
+  background: linear-gradient(135deg, #fff0a3, #ffd400 55%, #d8b400);
+  color: #0a0a0a;
+}
+
+.btn-gold:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -8px rgba(255, 212, 0, 0.55);
+  background: linear-gradient(135deg, #fff7c2, #ffe45c 55%, #ffd400);
+}
+
+.slot-pill {
+  @apply px-4 py-2 rounded-full text-sm border transition-all duration-200;
+}
+
+.slot-pill--available {
+  border-color: rgba(255, 212, 0, 0.25);
+  color: rgba(245, 241, 232, 0.8);
+}
+.slot-pill--available:hover {
+  border-color: #ffd400;
+  color: #ffe45c;
+}
+
+.slot-pill--selected {
+  background: linear-gradient(135deg, #ffe45c, #ffd400);
+  border-color: #ffd400;
+  color: #0a0a0a;
+  font-weight: 600;
+}
+
+.slot-pill--disabled {
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.25);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.checkbox-gold {
+  accent-color: #ffd400;
+}
+
+.package-price-card {
+  position: relative;
+  border: 1px solid rgba(255, 212, 0, 0.3);
+  background: radial-gradient(ellipse 120% 100% at 0% 0%, rgba(255, 212, 0, 0.08), transparent 60%), #0a0a0a;
+  box-shadow: 0 0 30px -10px rgba(255, 212, 0, 0.3);
+}

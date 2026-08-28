@@ -1,0 +1,104 @@
+// Prisma schema for Shoot Delight
+// Run `npx prisma migrate dev` after setting DATABASE_URL in .env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum AdvancePaymentStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+}
+
+enum AdminRole {
+  ADMIN
+  SUPERADMIN
+}
+
+model Admin {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      AdminRole @default(ADMIN)
+  createdAt DateTime  @default(now())
+}
+
+model Customer {
+  id        String    @id @default(uuid())
+  name      String
+  phone     String
+  email     String
+  instagram String?
+  createdAt DateTime  @default(now())
+
+  bookings  Booking[]
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  price       Float?
+  duration    String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Slot {
+  id        String   @id @default(uuid())
+  date      DateTime
+  time      String
+  isBlocked Boolean  @default(false)
+
+  bookingId String?  @unique
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([date, time])
+}
+
+model Booking {
+  id                  String        @id @default(uuid())
+
+  // Customer relation
+  customerId          String
+  customer            Customer      @relation(fields: [customerId], references: [id])
+
+  // Booking details
+  bookingDate         DateTime
+  location            String
+  eventAddress        String?
+  eventType           String
+  specialRequirements String?
+  referenceReelLink   String?
+
+  // Status
+  status              BookingStatus @default(PENDING)
+
+  // Admin notes
+  notes               String?
+
+  // Slot relation
+  slot                Slot?
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+}
